@@ -1,22 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Minimal auth-status signal used by the router's redirect logic.
+import '../../features/auth/presentation/providers/auth_controller.dart';
+
+/// Route-guard signal derived from [authControllerProvider]. Kept as its
+/// own small enum (rather than having app_router.dart watch AsyncValue<AppUser?>
+/// directly) so the router's redirect logic reads as intent, not
+/// AsyncValue-branching boilerplate.
 ///
-/// This is intentionally provisional: once `features/auth` lands (Phase 1),
-/// replace this with the real AsyncNotifier that tracks the authenticated
-/// user + tokens, and update `router.dart`'s `refreshListenable` to listen
-/// to it. Kept here (not inside features/auth) only so core/router has
-/// something concrete to depend on in this scaffold.
+/// This is a deliberate exception to the usual "core doesn't depend on
+/// features" direction: routing is inherently cross-cutting and needs to
+/// know about auth state. Every other feature should depend on core, not
+/// the other way around.
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
-class AuthStatusNotifier extends Notifier<AuthStatus> {
-  @override
-  AuthStatus build() => AuthStatus.unauthenticated;
+final authStatusProvider = Provider<AuthStatus>((ref) {
+  final auth = ref.watch(authControllerProvider);
 
-  void setAuthenticated() => state = AuthStatus.authenticated;
-
-  void setUnauthenticated() => state = AuthStatus.unauthenticated;
-}
-
-final authStatusProvider =
-    NotifierProvider<AuthStatusNotifier, AuthStatus>(AuthStatusNotifier.new);
+  return auth.when(
+    data: (user) => user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
+    loading: () => AuthStatus.unknown,
+    error: (_, __) => AuthStatus.unauthenticated,
+  );
+});

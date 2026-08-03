@@ -39,9 +39,47 @@ backend's `php artisan serve`). Override per-build:
 flutter run --dart-define=API_BASE_URL=http://localhost:8000/api/v1
 ```
 
-On first run you should land on the splash screen, tap "Continue (dev
-shortcut)", and see a card confirming the backend `/ping` call succeeded —
-that's the Phase 0 deliverable from `PHASES.md`.
+On first run you should land on the onboarding slides, then the login
+screen. Register an account (or use Google sign-in), and you'll land on
+the dashboard — an empty "No meetings yet" state at first. Tap "New
+meeting" to create one; seeing it appear in the list is your end-to-end
+connectivity check (Phase 0's `/ping` card was retired now that real
+data flows through the same path).
+
+## Google Sign-In setup (FR-1.2)
+
+`google_sign_in` v7 needs platform registration before it'll compile/run:
+
+- **Android**: register your app's SHA-1 fingerprint in the Google Cloud
+  Console (or Firebase console) for this package name. See the
+  [`google_sign_in_android` README](https://pub.dev/packages/google_sign_in_android#integration).
+- **iOS**: add the reversed client ID URL scheme to `Info.plist`. See the
+  [`google_sign_in_ios` README](https://pub.dev/packages/google_sign_in_ios#ios-integration).
+
+Then pass your OAuth client IDs at build time:
+```bash
+flutter run \
+  --dart-define=API_BASE_URL=http://localhost:8000/api/v1 \
+  --dart-define=GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=your-server-client-id.apps.googleusercontent.com
+```
+`GOOGLE_SERVER_CLIENT_ID` should match the backend's `GOOGLE_CLIENT_ID`
+(backend `.env`) — see `lib/features/auth/data/datasources/google_auth_data_source.dart`
+for how the resulting access token gets sent to `POST /api/v1/auth/google`.
+
+## A note on validation
+
+This sandbox has no Flutter/Dart SDK, so I could not run `flutter analyze`
+or `flutter test` against this code — only structural checks (syntax
+balance, careful manual review, and verifying package APIs like
+`google_sign_in` v7 against current docs before writing against them).
+Please run both after `flutter pub get`:
+```bash
+flutter analyze
+flutter test
+```
+and let me know what comes up — I'd rather fix real compiler feedback than
+guess twice.
 
 ## Architecture — feature-first + Clean Architecture
 
@@ -59,6 +97,14 @@ Features scaffolded: `auth`, `meetings`, `recording`, `ai_summary`, `tasks`,
 `calendar`, `notifications`, `workspace`, `search`, `analytics`, `profile`,
 `admin`, plus a lightweight `dashboard` (presentation-only for now — it
 aggregates other features rather than owning its own data).
+
+`auth` and `profile` are fully implemented (Phase 1). `meetings` and
+`notifications` are fully implemented (Phase 2 — CRUD, status transitions,
+participant invites, basic in-app notification list; no push yet). `profile`'s
+domain layer reuses `auth`'s `AppUser` entity rather than duplicating it,
+since they represent the same backend resource — an intentional exception
+to "features don't import each other," documented at the top of
+`lib/features/profile/domain/repositories/profile_repository.dart`.
 
 Rule of thumb per layer:
 - **domain/** never imports Flutter or Dio — pure Dart only.

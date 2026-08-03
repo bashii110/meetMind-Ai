@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../../../core/router/app_routes.dart';
 
 /// DESIGN.md 3.1: "Splash: logo + tagline, brief brand animation."
 ///
-/// Real logic (check stored token validity, fetch current user, decide
-/// authenticated vs unauthenticated) lands with the auth feature in Phase 1.
-/// For now this just renders the brand moment and lets the router redirect.
+/// Purely presentational — [AuthController.build] (triggered by
+/// core/di reading authStatusProvider) resolves whether there's a stored
+/// session, and the router's redirect in core/router/app_router.dart sends
+/// the user to onboarding/login or the dashboard once that's known.
 class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
 
@@ -38,9 +36,10 @@ class SplashScreen extends ConsumerWidget {
                   ),
             ),
             const SizedBox(height: 32),
-            TextButton(
-              onPressed: () => context.go(AppRoutes.dashboard),
-              child: const Text('Continue (dev shortcut)'),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
           ],
         ),
