@@ -8,19 +8,23 @@ import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/meetings/presentation/screens/create_edit_meeting_screen.dart';
 import '../../features/meetings/presentation/screens/meeting_details_screen.dart';
 import '../../features/meetings/presentation/screens/meeting_list_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/tasks/presentation/screens/create_edit_task_screen.dart';
+import '../../features/tasks/presentation/screens/task_details_screen.dart';
+import '../../features/tasks/presentation/screens/task_list_screen.dart';
 import 'app_routes.dart';
 import 'auth_status.dart';
 
 /// Declarative, deep-linkable navigation with auth guards — ARCHITECTURE.md
-/// 2.2. Additional routes (meetings, tasks, calendar, ...) get added to
-/// `routes` as each feature lands; keep this file as the single place
-/// route -> screen wiring happens.
+/// 2.2. Additional routes (workspace, search, ...) get added to `routes`
+/// as each feature lands; keep this file as the single place route ->
+/// screen wiring happens.
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Rebuild the router's matched route whenever auth status changes, so a
   // logout mid-session immediately redirects instead of waiting for the
@@ -114,8 +118,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationListScreen(),
       ),
+      // Phase 5: Smart Task Manager (SRD FR-7.x).
+      GoRoute(
+        path: AppRoutes.tasks,
+        builder: (context, state) => const TaskListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.taskNew,
+        builder: (context, state) => const CreateEditTaskScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.taskDetails,
+        builder: (context, state) => TaskDetailsScreen(taskId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.taskEdit,
+        builder: (context, state) => CreateEditTaskScreen(taskId: state.pathParameters['id']!),
+      ),
+      // Phase 6: Calendar (DESIGN.md 3.8).
+      GoRoute(
+        path: AppRoutes.calendar,
+        builder: (context, state) => const CalendarScreen(),
+      ),
 
-      // Phase 3+: register the real screens as each feature lands, e.g.
+      // Phase 7+: register the real screens as each feature lands, e.g.
       // GoRoute(
       //   path: AppRoutes.recordMeeting,
       //   builder: (_, state) => RecordMeetingScreen(id: state.pathParameters['id']!),

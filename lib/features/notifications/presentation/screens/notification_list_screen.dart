@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:meetmind_ai/features/notifications/domain/entities/app_notification.dart';
+import 'package:meetmind_ai/features/notifications/presentation/providers/notifications_controller.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/spacing.dart';
-import '../../../../core/widgets/empty_state.dart';
-import '../../domain/entities/app_notification.dart';
-import '../providers/notifications_controller.dart';
+import '../../../../../../core/network/api_failure.dart';
+import '../../../../../../core/router/app_routes.dart';
+import '../../../../../../core/theme/spacing.dart';
+import '../../../../../../core/widgets/empty_state.dart';
+
 
 class NotificationListScreen extends ConsumerWidget {
   const NotificationListScreen({super.key});
@@ -41,7 +42,7 @@ class NotificationListScreen extends ConsumerWidget {
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
-          child: Text(error is ApiFailure ? error.message : 'Could not load notifications.'),
+          child: Text(ApiFailure.from(error).message),
         ),
         data: (data) {
           if (data.items.isEmpty) {

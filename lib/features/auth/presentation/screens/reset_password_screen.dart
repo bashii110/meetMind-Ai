@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meetmind_ai/features/auth/presentation/providers/auth_controller.dart';
+import 'package:meetmind_ai/features/auth/presentation/widgets/auth_text_field.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/spacing.dart';
-import '../providers/auth_controller.dart';
-import '../widgets/auth_text_field.dart';
+import '../../../../../../core/network/api_failure.dart';
+import '../../../../../../core/router/app_routes.dart';
+import '../../../../../../core/theme/spacing.dart';
+
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key, required this.token, required this.email});
@@ -57,7 +58,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         context.go(AppRoutes.login);
       }
     } catch (e) {
-      final failure = e is ApiFailure ? e : ApiFailure.unknown(e.toString());
+      // ApiFailure.from unwraps DioException.error correctly — checking
+      // `e is ApiFailure` directly here is always false.
+      final failure = ApiFailure.from(e);
       setState(() => _formError = failure.message);
     } finally {
       if (mounted) setState(() => _submitting = false);

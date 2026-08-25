@@ -1,13 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../../../auth/domain/entities/app_user.dart';
-import '../../../auth/presentation/providers/auth_controller.dart';
-import 'profile_providers.dart';
+import 'package:meetmind_ai/features/auth/domain/entities/app_user.dart';
+import 'package:meetmind_ai/features/auth/presentation/providers/auth_controller.dart';
+import 'package:meetmind_ai/features/profile/presentation/providers/profile_providers.dart';
 
 class ProfileController extends AsyncNotifier<AppUser> {
   @override
-  Future<AppUser> build() => ref.read(getProfileUseCaseProvider)();
+  Future<AppUser> build() {
+    // Rebuild whenever the signed-in user changes (login, logout, or a
+    // different account logging in afterwards). This provider is
+    // intentionally NOT autoDispose (so profile data stays cached while
+    // navigating), which means without this dependency it would keep
+    // serving the *previous* user's cached profile after a logout/login
+    // switch, until something happened to force a refetch.
+    ref.watch(authControllerProvider.select((state) => state.valueOrNull?.id));
+    return ref.read(getProfileUseCaseProvider)();
+  }
 
   Future<void> updateProfile({
     String? name,

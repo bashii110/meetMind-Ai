@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:meetmind_ai/features/profile/presentation/providers/profile_controller.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/theme/spacing.dart';
-import '../providers/profile_controller.dart';
+import '../../../../../../core/network/api_failure.dart';
+import '../../../../../../core/theme/spacing.dart';
+
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -24,7 +25,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   List<String> _skills = [];
   XFile? _pickedAvatar;
-  bool _hydrated = false;
+
+  // Tracks *which user's* data the form was last hydrated from, rather
+  // than a one-shot bool. A plain bool would only ever hydrate once per
+  // widget instance and then never again — harmless for a fresh
+  // navigation (a new State is created each time), but fragile the
+  // moment this screen is kept alive across a logout/login (e.g. behind
+  // a bottom-nav IndexedStack), where it would keep showing the previous
+  // user's form values even after the underlying data changed.
+  String? _hydratedUserId;
   bool _saving = false;
   String? _error;
 
@@ -75,7 +84,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
       }
     } catch (e) {
-      final failure = e is ApiFailure ? e : ApiFailure.unknown(e.toString());
+      // ApiFailure.from unwraps DioException.error correctly — checking
+      // `e is ApiFailure` directly here is always false.
+      final failure = ApiFailure.from(e);
       setState(() => _error = failure.message);
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -86,16 +97,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
 
-    // Populate the form once, from whichever load finishes first — avoid
-    // clobbering in-progress edits on every provider rebuild.
+    // Populate the form once per user, from whichever load finishes first
+    // — avoid clobbering in-progress edits on every provider rebuild, but
+    // do re-hydrate if the underlying user actually changed.
     profile.whenData((user) {
-      if (!_hydrated) {
+      if (_hydratedUserId != user.id) {
         _name.text = user.name;
         _bio.text = user.bio ?? '';
         _company.text = user.company ?? '';
         _position.text = user.position ?? '';
         _skills = user.skills;
-        _hydrated = true;
+        _hydratedUserId = user.id;
       }
     });
 
@@ -106,9 +118,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(Spacing.xl),
-            child: Text(
-              error is ApiFailure ? error.message : 'Could not load your profile.',
-            ),
+            child: Text(ApiFailure.from(error).message),
           ),
         ),
         data: (user) => SingleChildScrollView(

@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Phase 3: microphone access for recording meetings (record package).
+	     Missing this key crashes the app the first time mic access is
+	     requested, rather than just denying it. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MeetMind AI needs microphone access to record your meetings.</string>
 </dict>
 </plist>

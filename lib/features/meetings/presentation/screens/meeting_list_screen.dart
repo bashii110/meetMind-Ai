@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meetmind_ai/features/meetings/domain/entities/meeting_filters.dart';
+import 'package:meetmind_ai/features/meetings/presentation/providers/meetings_list_controller.dart';
+import 'package:meetmind_ai/features/meetings/presentation/widgets/meeting_card.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/spacing.dart';
-import '../../../../core/widgets/empty_state.dart';
-import '../../domain/entities/meeting_filters.dart';
-import '../providers/meetings_list_controller.dart';
-import '../widgets/meeting_card.dart';
+import '../../../../../../core/network/api_failure.dart';
+import '../../../../../../core/router/app_routes.dart';
+import '../../../../../../core/theme/spacing.dart';
+import '../../../../../../core/widgets/empty_state.dart';
+
 
 const _statusOptions = ['draft', 'scheduled', 'completed', 'cancelled'];
 
@@ -97,7 +98,7 @@ class _MeetingListScreenState extends ConsumerState<MeetingListScreen> {
             child: state.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
-                child: Text(error is ApiFailure ? error.message : 'Could not load meetings.'),
+                child: Text(ApiFailure.from(error).message),
               ),
               data: (list) {
                 if (list.items.isEmpty) {

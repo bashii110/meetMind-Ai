@@ -41,6 +41,13 @@ dependencies:
   # Profile avatar upload — SRD FR-14.1
   image_picker: ^1.1.2
 
+  # Generic file picking for task attachments — SRD FR-7.3 / PHASES.md
+  # Phase 5. Deliberately a separate package from image_picker: task
+  # attachments aren't limited to images (see backend's spec.pdf test
+  # fixture in tests/Feature/Task/TaskTest.php), and image_picker doesn't
+  # expose a generic-file picker.
+  file_picker: ^8.1.2
+
   # Firebase (push notifications) — SRD.md 2.3
   firebase_core: ^3.3.0
   firebase_messaging: ^15.0.4

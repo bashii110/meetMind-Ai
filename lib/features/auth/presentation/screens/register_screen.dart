@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meetmind_ai/features/auth/presentation/providers/auth_controller.dart';
+import 'package:meetmind_ai/features/auth/presentation/widgets/auth_text_field.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/theme/spacing.dart';
-import '../providers/auth_controller.dart';
-import '../widgets/auth_text_field.dart';
+import '../../../../../../core/network/api_failure.dart';
+import '../../../../../../core/theme/spacing.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -49,7 +49,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
       // Router redirect (authStatusProvider) takes over on success.
     } catch (e) {
-      final failure = e is ApiFailure ? e : ApiFailure.unknown(e.toString());
+      // ApiFailure.from unwraps DioException.error correctly — checking
+      // `e is ApiFailure` directly here is always false.
+      final failure = ApiFailure.from(e);
       setState(() {
         _formError = failure.message;
         _fieldErrors = failure.fieldErrors;

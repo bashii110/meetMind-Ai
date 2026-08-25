@@ -9,11 +9,15 @@ import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../meetings/presentation/providers/meetings_list_controller.dart';
 import '../../../meetings/presentation/widgets/meeting_card.dart';
 import '../../../notifications/presentation/providers/notifications_controller.dart';
+import '../../../tasks/presentation/providers/task_stats_provider.dart';
 
-/// DESIGN.md 3.3's Home Dashboard. Phase 2 adds the meetings section now
-/// that meetings exist; the stat row, AI summaries list, calendar widget,
-/// and insights card described in DESIGN.md land with the phases that
-/// produce that data (Phase 4-6).
+/// DESIGN.md 3.3's Home Dashboard. Phase 2 added the meetings section;
+/// Phase 5 added the "Pending Tasks / Completed Tasks" stat row; Phase 6
+/// adds a calendar shortcut in the app bar (DESIGN.md 3.3's "mini calendar
+/// widget (tap to expand to full Calendar screen)" — a lightweight
+/// icon-button entry point rather than an embedded mini month grid, kept
+/// in scope for this pass). The AI summaries list and insights card land
+/// with the phases that produce that data (Phase 4/9).
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -22,12 +26,18 @@ class DashboardScreen extends ConsumerWidget {
     final user = ref.watch(authControllerProvider).valueOrNull;
     final meetings = ref.watch(meetingsListControllerProvider);
     final notifications = ref.watch(notificationsControllerProvider);
+    final taskStats = ref.watch(taskStatsProvider);
     final unreadCount = notifications.valueOrNull?.unreadCount ?? 0;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('MeetMind AI'),
         actions: [
+          IconButton(
+            tooltip: 'Calendar',
+            icon: const Icon(Icons.calendar_month_outlined),
+            onPressed: () => context.push(AppRoutes.calendar),
+          ),
           IconButton(
             tooltip: 'Notifications',
             icon: Badge(
@@ -117,7 +127,87 @@ class DashboardScreen extends ConsumerWidget {
                 );
               },
             ),
+            const SizedBox(height: Spacing.xl),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Your tasks', style: Theme.of(context).textTheme.titleMedium),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.tasks),
+                  child: const Text('View all'),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.sm),
+            taskStats.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: Spacing.md),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              // Non-fatal — the tasks section just quietly disappears rather
+              // than blocking the rest of the dashboard from rendering.
+              error: (_, __) => const SizedBox.shrink(),
+              data: (stats) => Row(
+                children: [
+                  Expanded(
+                    child: _TaskStatCard(
+                      label: 'Pending',
+                      count: stats.pending,
+                      icon: Icons.pending_actions_outlined,
+                      onTap: () => context.push(AppRoutes.tasks),
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.md),
+                  Expanded(
+                    child: _TaskStatCard(
+                      label: 'Completed',
+                      count: stats.completed,
+                      icon: Icons.task_alt_outlined,
+                      onTap: () => context.push(AppRoutes.tasks),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// DESIGN.md 3.3: "Two-column stat row: Pending Tasks / Completed Tasks."
+class _TaskStatCard extends StatelessWidget {
+  const _TaskStatCard({required this.label, required this.count, required this.icon, required this.onTap});
+
+  final String label;
+  final int count;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(Spacing.cardRadius),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.lg),
+          child: Row(
+            children: [
+              Icon(icon, color: scheme.primary),
+              const SizedBox(width: Spacing.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$count', style: Theme.of(context).textTheme.headlineSmall),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

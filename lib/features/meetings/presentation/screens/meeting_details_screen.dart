@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,10 +7,17 @@ import 'package:intl/intl.dart';
 import '../../../../core/network/api_failure.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../core/utils/error_feedback.dart';
 import '../../../../core/widgets/chip_input_field.dart';
 import '../../../../core/widgets/priority_indicator.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../ai_summary/presentation/widgets/summary_tab.dart';
+import '../../../ai_summary/presentation/widgets/task_candidates_tab.dart';
+import '../../../ai_summary/presentation/widgets/transcript_tab.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../recording/domain/entities/pending_upload.dart';
+import '../../../recording/presentation/providers/pending_uploads_provider.dart';
+import '../../../recording/presentation/providers/recording_providers.dart';
 import '../../domain/entities/meeting.dart';
 import '../providers/meeting_details_controller.dart';
 
@@ -47,9 +55,17 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed != true || !context.mounted) return;
+
+    try {
       await ref.read(meetingDetailsControllerProvider(widget.meetingId).notifier).delete();
       if (context.mounted) context.pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ApiFailure.from(e).message)),
+        );
+      }
     }
   }
 
@@ -76,16 +92,24 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
               onPressed: emails.isEmpty
                   ? null
                   : () async {
-                      Navigator.pop(context);
-                      final notFound = await ref
-                          .read(meetingDetailsControllerProvider(widget.meetingId).notifier)
-                          .inviteParticipants(emails);
-                      if (notFound.isNotEmpty && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('No account found for: ${notFound.join(', ')}')),
-                        );
-                      }
-                    },
+                Navigator.pop(context);
+                try {
+                  final notFound = await ref
+                      .read(meetingDetailsControllerProvider(widget.meetingId).notifier)
+                      .inviteParticipants(emails);
+                  if (notFound.isNotEmpty && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('No account found for: ${notFound.join(', ')}')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(ApiFailure.from(e).message)),
+                    );
+                  }
+                }
+              },
               child: const Text('Send invites'),
             ),
           ],
@@ -102,7 +126,7 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
       body: meeting.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
-          child: Text(error is ApiFailure ? error.message : 'Could not load this meeting.'),
+          child: Text(ApiFailure.from(error).message),
         ),
         data: (m) => NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
@@ -136,9 +160,9 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
             controller: _tabController,
             children: [
               _OverviewTab(meeting: m, onInvite: () => _inviteDialog(context)),
-              const _ComingSoonTab(label: 'Transcript', phase: 'Phase 4'),
-              const _ComingSoonTab(label: 'AI Summary', phase: 'Phase 4'),
-              const _ComingSoonTab(label: 'Tasks', phase: 'Phase 5'),
+              TranscriptTab(meetingId: m.id),
+              SummaryTab(meetingId: m.id),
+              TaskCandidatesTab(meetingId: m.id),
               const _ComingSoonTab(label: 'Files', phase: 'Phase 7'),
             ],
           ),
@@ -158,6 +182,7 @@ class _OverviewTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserId = ref.watch(authControllerProvider).valueOrNull?.id;
     final myParticipation = meeting.participants.where((p) => p.userId == currentUserId).firstOrNull;
+    final canRecord = meeting.status == 'draft' || meeting.status == 'scheduled';
 
     return ListView(
       padding: const EdgeInsets.all(Spacing.lg),
@@ -170,6 +195,19 @@ class _OverviewTab extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: Spacing.lg),
+        _PendingUploadsBanner(meetingId: meeting.id),
+        if (canRecord)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Spacing.md),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.push(AppRoutes.recordMeetingPath(meeting.id)),
+                icon: const Icon(Icons.mic_none_rounded),
+                label: const Text('Record meeting'),
+              ),
+            ),
+          ),
         if (meeting.status == 'draft' || meeting.status == 'scheduled')
           Padding(
             padding: const EdgeInsets.only(bottom: Spacing.lg),
@@ -178,21 +216,31 @@ class _OverviewTab extends ConsumerWidget {
               children: [
                 if (meeting.status == 'draft')
                   FilledButton(
-                    onPressed: () => ref
-                        .read(meetingDetailsControllerProvider(meeting.id).notifier)
-                        .changeStatus('scheduled'),
+                    onPressed: () => runOrNotify(
+                      context,
+                          () => ref
+                          .read(meetingDetailsControllerProvider(meeting.id).notifier)
+                          .changeStatus('scheduled'),
+                    ),
                     child: const Text('Mark as scheduled'),
                   ),
                 if (meeting.status == 'scheduled')
                   FilledButton(
-                    onPressed: () => ref
-                        .read(meetingDetailsControllerProvider(meeting.id).notifier)
-                        .changeStatus('completed'),
+                    onPressed: () => runOrNotify(
+                      context,
+                          () => ref
+                          .read(meetingDetailsControllerProvider(meeting.id).notifier)
+                          .changeStatus('completed'),
+                    ),
                     child: const Text('Mark as completed'),
                   ),
                 OutlinedButton(
-                  onPressed: () =>
-                      ref.read(meetingDetailsControllerProvider(meeting.id).notifier).changeStatus('cancelled'),
+                  onPressed: () => runOrNotify(
+                    context,
+                        () => ref
+                        .read(meetingDetailsControllerProvider(meeting.id).notifier)
+                        .changeStatus('cancelled'),
+                  ),
                   child: const Text('Cancel meeting'),
                 ),
               ],
@@ -211,16 +259,22 @@ class _OverviewTab extends ConsumerWidget {
                   Row(
                     children: [
                       FilledButton(
-                        onPressed: () => ref
-                            .read(meetingDetailsControllerProvider(meeting.id).notifier)
-                            .respondToInvitation('accepted'),
+                        onPressed: () => runOrNotify(
+                          context,
+                              () => ref
+                              .read(meetingDetailsControllerProvider(meeting.id).notifier)
+                              .respondToInvitation('accepted'),
+                        ),
                         child: const Text('Accept'),
                       ),
                       const SizedBox(width: Spacing.sm),
                       OutlinedButton(
-                        onPressed: () => ref
-                            .read(meetingDetailsControllerProvider(meeting.id).notifier)
-                            .respondToInvitation('declined'),
+                        onPressed: () => runOrNotify(
+                          context,
+                              () => ref
+                              .read(meetingDetailsControllerProvider(meeting.id).notifier)
+                              .respondToInvitation('declined'),
+                        ),
                         child: const Text('Decline'),
                       ),
                     ],
@@ -266,6 +320,77 @@ class _OverviewTab extends ConsumerWidget {
         if (meeting.ownerName != null) _ParticipantRow(name: meeting.ownerName!, status: 'Owner'),
         for (final p in meeting.participants) _ParticipantRow(name: p.name, status: p.inviteStatus),
       ],
+    );
+  }
+}
+
+/// DESIGN.md 3.5: "subtle 'processing in background' indicator once
+/// stopped." Shows nothing once every recording for this meeting has
+/// finished uploading.
+class _PendingUploadsBanner extends ConsumerWidget {
+  const _PendingUploadsBanner({required this.meetingId});
+
+  final String meetingId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uploads = ref.watch(pendingUploadsForMeetingProvider(meetingId));
+
+    return uploads.maybeWhen(
+      data: (list) {
+        final active = list.where((u) => u.status != PendingUploadStatus.uploaded).toList();
+        if (active.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: Spacing.md),
+          child: Column(
+            children: [for (final upload in active) _PendingUploadTile(upload: upload)],
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _PendingUploadTile extends ConsumerWidget {
+  const _PendingUploadTile({required this.upload});
+
+  final PendingUpload upload;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final failed = upload.status == PendingUploadStatus.failed;
+
+    return Card(
+      color: failed ? scheme.errorContainer : scheme.tertiaryContainer,
+      margin: const EdgeInsets.only(bottom: Spacing.sm),
+      child: ListTile(
+        leading: Icon(
+          failed ? Icons.error_outline : Icons.cloud_upload_outlined,
+          color: failed ? scheme.onErrorContainer : scheme.onTertiaryContainer,
+        ),
+        title: Text(failed ? 'Recording upload failed' : 'Uploading recording…'),
+        subtitle: Text(
+          failed
+              ? (upload.errorMessage ?? 'Please retry.')
+              : '${(upload.progress * 100).round()}% — this continues in the background.',
+        ),
+        trailing: failed
+            ? IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: () => runOrNotify(context, () async {
+            await ref.read(retryUploadUseCaseProvider)(upload.id);
+            ref.invalidate(pendingUploadsForMeetingProvider(upload.meetingId));
+          }),
+        )
+            : const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
     );
   }
 }

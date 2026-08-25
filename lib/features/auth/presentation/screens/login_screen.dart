@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meetmind_ai/features/auth/presentation/providers/auth_controller.dart';
+import 'package:meetmind_ai/features/auth/presentation/widgets/auth_text_field.dart';
+import 'package:meetmind_ai/features/auth/presentation/widgets/google_sign_in_button.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/theme/spacing.dart';
-import '../providers/auth_controller.dart';
-import '../widgets/auth_text_field.dart';
-import '../widgets/google_sign_in_button.dart';
+import '../../../../../../core/network/api_failure.dart';
+import '../../../../../../core/router/app_routes.dart';
+import '../../../../../../core/theme/spacing.dart';
+
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -46,7 +47,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // On success, the router's redirect (driven by authStatusProvider)
       // takes over — no explicit navigation needed here.
     } catch (e) {
-      final failure = e is ApiFailure ? e : ApiFailure.unknown(e.toString());
+      // ApiFailure.from unwraps DioException.error correctly — checking
+      // `e is ApiFailure` directly here is always false, since Dio throws
+      // the DioException wrapper, not the ApiFailure attached to it.
+      final failure = ApiFailure.from(e);
       setState(() {
         _formError = failure.message;
         _fieldErrors = failure.fieldErrors;
@@ -65,7 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authControllerProvider.notifier).loginWithGoogle();
     } catch (e) {
-      final failure = e is ApiFailure ? e : ApiFailure.unknown(e.toString());
+      final failure = ApiFailure.from(e);
       setState(() => _formError = failure.message);
     } finally {
       if (mounted) setState(() => _submitting = false);

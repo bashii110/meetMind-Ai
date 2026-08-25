@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:meetmind_ai/features/auth/presentation/providers/auth_controller.dart';
+import 'package:meetmind_ai/features/meetings/domain/entities/meeting.dart';
+import 'package:meetmind_ai/features/meetings/domain/entities/meeting_filters.dart';
+import 'package:meetmind_ai/features/meetings/presentation/providers/meeting_providers.dart';
 
-import '../../domain/entities/meeting.dart';
-import '../../domain/entities/meeting_filters.dart';
-import 'meeting_providers.dart';
 
 class MeetingsListState {
   const MeetingsListState({
@@ -36,7 +37,16 @@ class MeetingsListController extends AsyncNotifier<MeetingsListState> {
   int _page = 1;
 
   @override
-  Future<MeetingsListState> build() => _fetch(MeetingFilters.empty, page: 1);
+  Future<MeetingsListState> build() {
+    // Rebuild whenever the signed-in user changes (login, logout, or a
+    // different account logging in afterwards). This provider is
+    // intentionally NOT autoDispose, which means without this dependency
+    // it would keep serving the *previous* user's cached meetings list
+    // after a logout/login switch — visible as "the dashboard only
+    // updates after a manual pull-to-refresh."
+    ref.watch(authControllerProvider.select((state) => state.valueOrNull?.id));
+    return _fetch(MeetingFilters.empty, page: 1);
+  }
 
   Future<MeetingsListState> _fetch(MeetingFilters filters, {required int page}) async {
     final result = await ref.read(listMeetingsUseCaseProvider)(filters: filters, page: page);

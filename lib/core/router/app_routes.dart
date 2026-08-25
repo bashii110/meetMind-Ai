@@ -19,7 +19,9 @@ class AppRoutes {
   static const transcript = '/meetings/:id/transcript';
 
   static const tasks = '/tasks';
+  static const taskNew = '/tasks/new';
   static const taskDetails = '/tasks/:id';
+  static const taskEdit = '/tasks/:id/edit';
 
   static const calendar = '/calendar';
   static const notifications = '/notifications';
@@ -35,4 +37,5 @@ class AppRoutes {
   static String recordMeetingPath(String id) => '/meetings/$id/record';
   static String aiSummaryPath(String id) => '/meetings/$id/summary';
   static String taskDetailsPath(String id) => '/tasks/$id';
+  static String taskEditPath(String id) => '/tasks/$id/edit';
 }

@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/network/api_failure.dart';
-import '../../../../core/theme/spacing.dart';
-import '../../../../core/widgets/chip_input_field.dart';
-import '../../domain/entities/meeting.dart';
-import '../providers/meeting_details_controller.dart';
-import '../providers/meeting_providers.dart';
-import '../providers/meetings_list_controller.dart';
+import 'package:meetmind_ai/core/network/api_failure.dart';
+import 'package:meetmind_ai/core/theme/spacing.dart';
+import 'package:meetmind_ai/core/widgets/chip_input_field.dart';
+import 'package:meetmind_ai/features/meetings/domain/entities/meeting.dart';
+import 'package:meetmind_ai/features/meetings/presentation/providers/meeting_details_controller.dart';
+import 'package:meetmind_ai/features/meetings/presentation/providers/meeting_providers.dart';
+import 'package:meetmind_ai/features/meetings/presentation/providers/meetings_list_controller.dart';
+
 
 const _priorities = ['low', 'medium', 'high'];
 final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
@@ -130,13 +131,31 @@ class _CreateEditMeetingScreenState extends ConsumerState<CreateEditMeetingScree
           tags: _tags,
           participantEmails: _participantEmails,
         );
-        ref.read(meetingsListControllerProvider.notifier).refresh();
+        // Await this (rather than fire-and-forget) so the list is
+        // guaranteed to include the new meeting by the time we pop back to
+        // it — otherwise the previous screen can render one stale frame.
+        await ref.read(meetingsListControllerProvider.notifier).refresh();
       }
 
       if (mounted) context.pop();
     } catch (e) {
-      final failure = e is ApiFailure ? e : ApiFailure.unknown(e.toString());
-      setState(() => _error = failure.message);
+      // ApiFailure.from unwraps DioException.error correctly — checking
+      // `e is ApiFailure` directly here is always false, since Dio throws
+      // the DioException wrapper, not the ApiFailure attached to it. That
+      // bug is exactly what made creation failures (e.g. validation
+      // errors) look like nothing happened.
+      final failure = ApiFailure.from(e);
+      if (mounted) {
+        setState(() => _error = failure.message);
+        // The inline banner above can scroll out of view in a long form —
+        // a SnackBar guarantees the failure is always visible.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(failure.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -149,7 +168,7 @@ class _CreateEditMeetingScreenState extends ConsumerState<CreateEditMeetingScree
       return meeting.when(
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (error, _) => Scaffold(
-          body: Center(child: Text(error is ApiFailure ? error.message : 'Could not load meeting.')),
+          body: Center(child: Text(ApiFailure.from(error).message)),
         ),
         data: (m) {
           _hydrate(m);

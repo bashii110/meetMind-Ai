@@ -7,7 +7,7 @@ import 'dio_interceptors.dart';
 /// build time rather than hardcoding per-flavor values here.
 const _defaultBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://192.168.100.139:8000/api/v1', // Android emulator -> localhost:8000
+  defaultValue: 'http://192.168.0.103:8000/api/v1', // Android emulator -> localhost:8000
 );
 
 /// Builds the single Dio instance the app shares. Feature data sources
