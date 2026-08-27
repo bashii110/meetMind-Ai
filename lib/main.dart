@@ -10,6 +10,8 @@ import 'core/router/app_router.dart';
 import 'core/router/auth_status.dart';
 import 'core/storage/local_db.dart';
 import 'core/theme/app_theme.dart';
+import 'features/notifications/presentation/providers/notifications_controller.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,11 +30,18 @@ Future<void> main() async {
 /// of the app should keep working — see FcmService's class doc.
 Future<void> _initializeFirebase() async {
   try {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    FirebaseMessaging.onBackgroundMessage(
+      firebaseMessagingBackgroundHandler,
+    );
   } catch (e) {
     if (kDebugMode) {
-      debugPrint('Firebase not configured yet, push notifications are disabled: $e');
+      debugPrint(
+        'Firebase initialization failed: $e',
+      );
     }
   }
 }
@@ -49,10 +58,15 @@ class MeetMindApp extends ConsumerWidget {
     // unconditionally at startup — see FcmService's class doc.
     ref.listen(authStatusProvider, (previous, next) {
       final fcm = ref.read(fcmServiceProvider);
+
       if (next == AuthStatus.authenticated) {
-        fcm.initialize(onNotificationTap: (data) => _handleNotificationTap(ref, data));
-      } else if (next == AuthStatus.unauthenticated && previous == AuthStatus.authenticated) {
-        fcm.unregister();
+        fcm.initialize(
+          onNotificationTap: (data) =>
+              _handleNotificationTap(ref, data),
+          onNotificationReceived: () {
+            ref.invalidate(notificationsControllerProvider);
+          },
+        );
       }
     });
 

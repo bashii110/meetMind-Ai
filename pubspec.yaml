@@ -50,7 +50,7 @@ dependencies:
 
   # Firebase (push notifications) — SRD.md 2.3
   firebase_core: ^3.3.0
-  firebase_messaging: ^15.0.4
+  firebase_messaging: ^15.2.10
   flutter_local_notifications: ^17.2.2
 
   # Audio recording pipeline — ARCHITECTURE.md 2.4

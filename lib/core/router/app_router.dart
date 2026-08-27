@@ -15,6 +15,7 @@ import '../../features/meetings/presentation/screens/meeting_details_screen.dart
 import '../../features/meetings/presentation/screens/meeting_list_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/recording/presentation/screens/record_meeting_screen.dart';
 import '../../features/tasks/presentation/screens/create_edit_task_screen.dart';
 import '../../features/tasks/presentation/screens/task_details_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_screen.dart';
@@ -113,6 +114,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.meetingEdit,
         builder: (context, state) => CreateEditMeetingScreen(meetingId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.recordMeeting,
+        builder: (context, state) => RecordMeetingScreen(
+          meetingId: state.pathParameters['id']!,
+        ),
       ),
       GoRoute(
         path: AppRoutes.notifications,

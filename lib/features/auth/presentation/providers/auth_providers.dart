@@ -17,7 +17,7 @@ import '../../domain/usecases/reset_password_usecase.dart';
 // frontend/README.md's "Google Sign-In setup" section. Overridable per
 // build: --dart-define=GOOGLE_CLIENT_ID=... --dart-define=GOOGLE_SERVER_CLIENT_ID=...
 const _googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
-const _googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+const _googleServerClientId = '772943108023-a4183nfu8p3coigkcs3d2v7ir9ct6dla.apps.googleusercontent.com';
 
 final authRemoteDataSourceProvider = Provider(
   (ref) => AuthRemoteDataSource(ref.watch(dioProvider)),

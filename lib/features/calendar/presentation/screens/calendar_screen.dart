@@ -44,9 +44,21 @@ class CalendarScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Calendar')),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Text(error is ApiFailure ? error.message : 'Could not load your calendar.'),
-        ),
+        error: (error, stack) {
+          debugPrint('CALENDAR ERROR: $error');
+          debugPrint('CALENDAR STACK: $stack');
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                error is ApiFailure
+                    ? '${error.statusCode}: ${error.message}'
+                    : 'Calendar error: $error',
+              ),
+            ),
+          );
+        },
         data: (calendarState) => Column(
           children: [
             Padding(

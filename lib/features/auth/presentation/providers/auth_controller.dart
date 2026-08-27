@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:meetmind_ai/core/notifications/fcm_providers.dart';
 
 import '../../domain/entities/app_user.dart';
 import 'auth_providers.dart';
@@ -57,7 +58,13 @@ class AuthController extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> logout() async {
+    // 1. Remove FCM token while auth token is still valid
+    await ref.read(fcmServiceProvider).unregister();
+
+    // 2. Logout from Laravel
     await ref.read(logoutUseCaseProvider)();
+
+    // 3. Update auth state
     state = const AsyncData(null);
   }
 
