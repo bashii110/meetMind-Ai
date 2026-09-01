@@ -58,6 +58,9 @@ class AiSummaryRepositoryImpl implements AiSummaryRepository {
   @override
   Future<void> dismissTaskCandidate(String taskCandidateId) => _remote.dismissTaskCandidate(taskCandidateId);
 
+  @override
+  Future<String> queryAssistant(String meetingId, String prompt) => _remote.queryAssistant(meetingId, prompt);
+
   String _formatDate(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 }

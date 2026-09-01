@@ -4,6 +4,7 @@ import 'package:meetmind_ai/features/ai%20status/domain/usecases/get_ai_status_u
 import 'package:meetmind_ai/features/ai_summary/data/datasources/ai_summary_remote_data_source.dart';
 import 'package:meetmind_ai/features/ai_summary/data/repositories/ai_summary_repository_impl.dart';
 import 'package:meetmind_ai/features/ai_summary/domain/repositories/ai_summary_repository.dart';
+import 'package:meetmind_ai/features/ai_summary/domain/usecases/query_assistant_usecase.dart';
 import 'package:meetmind_ai/features/meetings/domain/usecases/get_meeting_summary_usecase.dart';
 import 'package:meetmind_ai/features/tasks/domain/usecases/confirm_task_candidate_usecase.dart';
 import 'package:meetmind_ai/features/tasks/domain/usecases/dismiss_task_candidate_usecase.dart';
@@ -30,3 +31,6 @@ final confirmTaskCandidateUseCaseProvider =
     Provider((ref) => ConfirmTaskCandidateUseCase(ref.watch(aiSummaryRepositoryProvider)));
 final dismissTaskCandidateUseCaseProvider =
     Provider((ref) => DismissTaskCandidateUseCase(ref.watch(aiSummaryRepositoryProvider)));
+// Phase 8: AI Chat Assistant (SRD FR-11.x).
+final queryAssistantUseCaseProvider =
+    Provider((ref) => QueryAssistantUseCase(ref.watch(aiSummaryRepositoryProvider)));

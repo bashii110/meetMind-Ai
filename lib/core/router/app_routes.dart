@@ -25,7 +25,13 @@ class AppRoutes {
 
   static const calendar = '/calendar';
   static const notifications = '/notifications';
+
+  // Phase 7: Team Collaboration & Workspaces (SRD FR-10.x).
   static const workspace = '/workspace';
+  static const workspaceNew = '/workspace/new';
+  static const workspaceDetails = '/workspace/:id';
+  static const workspaceEdit = '/workspace/:id/edit';
+
   static const search = '/search';
   static const analytics = '/analytics';
   static const profile = '/profile';
@@ -38,4 +44,6 @@ class AppRoutes {
   static String aiSummaryPath(String id) => '/meetings/$id/summary';
   static String taskDetailsPath(String id) => '/tasks/$id';
   static String taskEditPath(String id) => '/tasks/$id/edit';
+  static String workspaceDetailsPath(String id) => '/workspace/$id';
+  static String workspaceEditPath(String id) => '/workspace/$id/edit';
 }

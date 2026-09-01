@@ -11,6 +11,7 @@ import '../../../../core/utils/error_feedback.dart';
 import '../../../../core/widgets/chip_input_field.dart';
 import '../../../../core/widgets/priority_indicator.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../ai_summary/presentation/widgets/assistant_tab.dart';
 import '../../../ai_summary/presentation/widgets/summary_tab.dart';
 import '../../../ai_summary/presentation/widgets/task_candidates_tab.dart';
 import '../../../ai_summary/presentation/widgets/transcript_tab.dart';
@@ -34,7 +35,8 @@ class MeetingDetailsScreen extends ConsumerStatefulWidget {
 
 class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
     with SingleTickerProviderStateMixin {
-  late final _tabController = TabController(length: 5, vsync: this);
+  // Phase 8 adds the "Assistant" tab (SRD FR-11.1/11.2), bringing this to 6.
+  late final _tabController = TabController(length: 6, vsync: this);
 
   @override
   void dispose() {
@@ -150,6 +152,7 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
                   Tab(text: 'Overview'),
                   Tab(text: 'Transcript'),
                   Tab(text: 'Summary'),
+                  Tab(text: 'Assistant'),
                   Tab(text: 'Tasks'),
                   Tab(text: 'Files'),
                 ],
@@ -162,6 +165,7 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
               _OverviewTab(meeting: m, onInvite: () => _inviteDialog(context)),
               TranscriptTab(meetingId: m.id),
               SummaryTab(meetingId: m.id),
+              AssistantTab(meetingId: m.id),
               TaskCandidatesTab(meetingId: m.id),
               const _ComingSoonTab(label: 'Files', phase: 'Phase 7'),
             ],

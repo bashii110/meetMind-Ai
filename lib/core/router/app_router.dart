@@ -16,16 +16,20 @@ import '../../features/meetings/presentation/screens/meeting_list_screen.dart';
 import '../../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/recording/presentation/screens/record_meeting_screen.dart';
+import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/tasks/presentation/screens/create_edit_task_screen.dart';
 import '../../features/tasks/presentation/screens/task_details_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_screen.dart';
+import '../../features/workspace/presentation/screens/create_edit_workspace_screen.dart';
+import '../../features/workspace/presentation/screens/workspace_details_screen.dart';
+import '../../features/workspace/presentation/screens/workspace_list_screen.dart';
 import 'app_routes.dart';
 import 'auth_status.dart';
 
 /// Declarative, deep-linkable navigation with auth guards — ARCHITECTURE.md
-/// 2.2. Additional routes (workspace, search, ...) get added to `routes`
-/// as each feature lands; keep this file as the single place route ->
-/// screen wiring happens.
+/// 2.2. Additional routes (analytics, admin, ...) get added to `routes` as
+/// each feature lands; keep this file as the single place route -> screen
+/// wiring happens.
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Rebuild the router's matched route whenever auth status changes, so a
   // logout mid-session immediately redirects instead of waiting for the
@@ -147,11 +151,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.calendar,
         builder: (context, state) => const CalendarScreen(),
       ),
+      // Phase 7: Team Collaboration & Workspaces (SRD FR-10.x).
+      GoRoute(
+        path: AppRoutes.workspace,
+        builder: (context, state) => const WorkspaceListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.workspaceNew,
+        builder: (context, state) => const CreateEditWorkspaceScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.workspaceDetails,
+        builder: (context, state) => WorkspaceDetailsScreen(workspaceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.workspaceEdit,
+        builder: (context, state) => CreateEditWorkspaceScreen(workspaceId: state.pathParameters['id']!),
+      ),
+      // Phase 8: AI Chat Assistant & Search (SRD FR-11.x/FR-12.x). The
+      // assistant itself has no standalone route — it lives as a tab on
+      // MeetingDetailsScreen (see AppRoutes.meetingDetails).
+      GoRoute(
+        path: AppRoutes.search,
+        builder: (context, state) => const SearchScreen(),
+      ),
 
-      // Phase 7+: register the real screens as each feature lands, e.g.
+      // Phase 9+: register the real screens as each feature lands, e.g.
       // GoRoute(
-      //   path: AppRoutes.recordMeeting,
-      //   builder: (_, state) => RecordMeetingScreen(id: state.pathParameters['id']!),
+      //   path: AppRoutes.analytics,
+      //   builder: (_, state) => const AnalyticsScreen(),
       // ),
     ],
   );

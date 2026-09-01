@@ -13,11 +13,14 @@ import '../../../tasks/presentation/providers/task_stats_provider.dart';
 
 /// DESIGN.md 3.3's Home Dashboard. Phase 2 added the meetings section;
 /// Phase 5 added the "Pending Tasks / Completed Tasks" stat row; Phase 6
-/// adds a calendar shortcut in the app bar (DESIGN.md 3.3's "mini calendar
+/// added a calendar shortcut in the app bar (DESIGN.md 3.3's "mini calendar
 /// widget (tap to expand to full Calendar screen)" — a lightweight
 /// icon-button entry point rather than an embedded mini month grid, kept
-/// in scope for this pass). The AI summaries list and insights card land
-/// with the phases that produce that data (Phase 4/9).
+/// in scope for this pass). Phase 7 added a Workspaces shortcut alongside
+/// it (SRD FR-10.1). Phase 8 adds a global Search shortcut (SRD FR-12.1) —
+/// same lightweight icon-button pattern, since the dashboard itself isn't
+/// search-scoped. The AI summaries list and insights card land with the
+/// phases that produce that data (Phase 4/9).
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -31,13 +34,19 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MeetMind AI'),
+        title: const Text(
+          'MeetMind AI',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Calendar',
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => context.push(AppRoutes.calendar),
+            tooltip: 'Search',
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push(AppRoutes.search),
           ),
+
           IconButton(
             tooltip: 'Notifications',
             icon: Badge(
@@ -47,16 +56,67 @@ class DashboardScreen extends ConsumerWidget {
             ),
             onPressed: () => context.push(AppRoutes.notifications),
           ),
-          IconButton(
-            tooltip: 'Profile',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push(AppRoutes.profile),
+
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'workspace':
+                  context.push(AppRoutes.workspace);
+                  break;
+
+                case 'calendar':
+                  context.push(AppRoutes.calendar);
+                  break;
+
+                case 'profile':
+                  context.push(AppRoutes.profile);
+                  break;
+
+                case 'logout':
+                  ref.read(authControllerProvider.notifier).logout();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'workspace',
+                child: ListTile(
+                  leading: Icon(Icons.workspaces_outlined),
+                  title: Text('Workspaces'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'calendar',
+                child: ListTile(
+                  leading: Icon(Icons.calendar_month_outlined),
+                  title: Text('Calendar'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Profile'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Log out'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            tooltip: 'Log out',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          ),
+
+          const SizedBox(width: 8),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
