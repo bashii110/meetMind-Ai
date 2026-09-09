@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/presentation/screens/admin_screen.dart';
+import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
@@ -27,9 +29,8 @@ import 'app_routes.dart';
 import 'auth_status.dart';
 
 /// Declarative, deep-linkable navigation with auth guards — ARCHITECTURE.md
-/// 2.2. Additional routes (analytics, admin, ...) get added to `routes` as
-/// each feature lands; keep this file as the single place route -> screen
-/// wiring happens.
+/// 2.2. Additional routes get added to `routes` as each feature lands;
+/// keep this file as the single place route -> screen wiring happens.
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Rebuild the router's matched route whenever auth status changes, so a
   // logout mid-session immediately redirects instead of waiting for the
@@ -175,12 +176,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.search,
         builder: (context, state) => const SearchScreen(),
       ),
-
-      // Phase 9+: register the real screens as each feature lands, e.g.
-      // GoRoute(
-      //   path: AppRoutes.analytics,
-      //   builder: (_, state) => const AnalyticsScreen(),
-      // ),
+      // Phase 9: Analytics & Admin (SRD FR-13.x/FR-16.x). AdminScreen
+      // gates its own content client-side to system admins; the route
+      // itself stays open so a non-admin gets a friendly "no access"
+      // message instead of a raw 404-style dead link.
+      GoRoute(
+        path: AppRoutes.analytics,
+        builder: (context, state) => const AnalyticsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.admin,
+        builder: (context, state) => const AdminScreen(),
+      ),
     ],
   );
 });

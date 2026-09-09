@@ -13,14 +13,13 @@ import '../../../tasks/presentation/providers/task_stats_provider.dart';
 
 /// DESIGN.md 3.3's Home Dashboard. Phase 2 added the meetings section;
 /// Phase 5 added the "Pending Tasks / Completed Tasks" stat row; Phase 6
-/// added a calendar shortcut in the app bar (DESIGN.md 3.3's "mini calendar
-/// widget (tap to expand to full Calendar screen)" — a lightweight
-/// icon-button entry point rather than an embedded mini month grid, kept
-/// in scope for this pass). Phase 7 added a Workspaces shortcut alongside
-/// it (SRD FR-10.1). Phase 8 adds a global Search shortcut (SRD FR-12.1) —
-/// same lightweight icon-button pattern, since the dashboard itself isn't
-/// search-scoped. The AI summaries list and insights card land with the
-/// phases that produce that data (Phase 4/9).
+/// added a calendar shortcut in the app bar; Phase 7 added a Workspaces
+/// shortcut (SRD FR-10.1); Phase 8 added a global Search shortcut (SRD
+/// FR-12.1). Phase 9 adds an Analytics shortcut for every signed-in user
+/// (SRD FR-13.1/FR-2.5) and an Admin shortcut shown only to
+/// `role == 'system_admin'` accounts (SRD FR-16.x) — regular users never
+/// see the icon, since there's nothing behind it for them; `AdminScreen`
+/// still re-checks the role itself as the real gate.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -31,22 +30,20 @@ class DashboardScreen extends ConsumerWidget {
     final notifications = ref.watch(notificationsControllerProvider);
     final taskStats = ref.watch(taskStatsProvider);
     final unreadCount = notifications.valueOrNull?.unreadCount ?? 0;
+    final isSystemAdmin = user?.role == 'system_admin';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'MeetMind AI',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text('MeetMind AI'),
         actions: [
+          // Search - keep visible
           IconButton(
             tooltip: 'Search',
             icon: const Icon(Icons.search),
             onPressed: () => context.push(AppRoutes.search),
           ),
 
+          // Notifications - keep visible
           IconButton(
             tooltip: 'Notifications',
             icon: Badge(
@@ -57,11 +54,23 @@ class DashboardScreen extends ConsumerWidget {
             onPressed: () => context.push(AppRoutes.notifications),
           ),
 
+          // Profile - keep visible
+          IconButton(
+            tooltip: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => context.push(AppRoutes.profile),
+          ),
+
+          // More menu
           PopupMenuButton<String>(
             tooltip: 'More',
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               switch (value) {
+                case 'analytics':
+                  context.push(AppRoutes.analytics);
+                  break;
+
                 case 'workspace':
                   context.push(AppRoutes.workspace);
                   break;
@@ -70,8 +79,8 @@ class DashboardScreen extends ConsumerWidget {
                   context.push(AppRoutes.calendar);
                   break;
 
-                case 'profile':
-                  context.push(AppRoutes.profile);
+                case 'admin':
+                  context.push(AppRoutes.admin);
                   break;
 
                 case 'logout':
@@ -81,6 +90,15 @@ class DashboardScreen extends ConsumerWidget {
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
+                value: 'analytics',
+                child: ListTile(
+                  leading: Icon(Icons.insights_outlined),
+                  title: Text('Analytics'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+
+              const PopupMenuItem(
                 value: 'workspace',
                 child: ListTile(
                   leading: Icon(Icons.workspaces_outlined),
@@ -88,6 +106,7 @@ class DashboardScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
+
               const PopupMenuItem(
                 value: 'calendar',
                 child: ListTile(
@@ -96,15 +115,19 @@ class DashboardScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
-                value: 'profile',
-                child: ListTile(
-                  leading: Icon(Icons.person_outline),
-                  title: Text('Profile'),
-                  contentPadding: EdgeInsets.zero,
+
+              if (isSystemAdmin)
+                const PopupMenuItem(
+                  value: 'admin',
+                  child: ListTile(
+                    leading: Icon(Icons.admin_panel_settings_outlined),
+                    title: Text('Admin'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
-              ),
+
               const PopupMenuDivider(),
+
               const PopupMenuItem(
                 value: 'logout',
                 child: ListTile(
@@ -115,8 +138,6 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
-
-          const SizedBox(width: 8),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
