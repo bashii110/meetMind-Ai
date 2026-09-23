@@ -164,7 +164,10 @@ class _MeetingDetailsScreenState extends ConsumerState<MeetingDetailsScreen>
             children: [
               _OverviewTab(meeting: m, onInvite: () => _inviteDialog(context)),
               TranscriptTab(meetingId: m.id),
-              SummaryTab(meetingId: m.id),
+              // Phase 12: SummaryTab now takes the full Meeting (not just
+              // its id) so the export/share sheet has title/date/time
+              // without a second fetch.
+              SummaryTab(meeting: m),
               AssistantTab(meetingId: m.id),
               TaskCandidatesTab(meetingId: m.id),
               const _ComingSoonTab(label: 'Files', phase: 'Phase 7'),

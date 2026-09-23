@@ -9,6 +9,7 @@ import '../../../../../../core/network/api_failure.dart';
 import '../../../../../../core/router/app_routes.dart';
 import '../../../../../../core/theme/spacing.dart';
 import '../../../../../../core/widgets/empty_state.dart';
+import '../../../../../../core/widgets/skeleton_loader.dart';
 
 
 const _statusOptions = ['draft', 'scheduled', 'completed', 'cancelled'];
@@ -96,7 +97,9 @@ class _MeetingListScreenState extends ConsumerState<MeetingListScreen> {
           const SizedBox(height: Spacing.sm),
           Expanded(
             child: state.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              // Phase 12 (DESIGN.md 4): a skeleton list instead of a bare
+              // spinner for the loading state.
+              loading: () => const SkeletonList(),
               error: (error, _) => Center(
                 child: Text(ApiFailure.from(error).message),
               ),

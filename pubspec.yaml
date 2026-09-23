@@ -69,10 +69,20 @@ dependencies:
   # UI / theming (Material 3 + Design.md)
   google_fonts: ^6.3.2
   flutter_svg: ^2.0.10+1
-  shimmer: ^3.0.0 # skeleton loaders (DESIGN.md 4)
+  shimmer: ^3.0.0 # skeleton loaders (DESIGN.md 4) — wired up in Phase 12
 
   # Charts (Analytics screen — DESIGN.md 3.11)
   fl_chart: ^0.68.0
+
+  # Export & sharing (PHASES.md Phase 12) — PDF/Markdown/Word(RTF) export
+  # and the OS share sheet for a generated meeting summary. Markdown/RTF
+  # are hand-built strings (see core/export/summary_export_service.dart),
+  # so `pdf` is the only new format-generation dependency; `share_plus`
+  # hands the resulting file to the OS share sheet. Pinned to share_plus's
+  # long-stable pre-v10 static API (Share.share/Share.shareXFiles) rather
+  # than its newer SharePlus.instance rewrite, to minimize API-surface risk.
+  pdf: ^3.11.1
+  share_plus: ^7.2.2
 
   # Utilities
   freezed_annotation: ^2.4.4

@@ -2,21 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meetmind_ai/features/ai%20status/domain/entities/ai_status.dart';
 import 'package:meetmind_ai/features/ai%20status/presentation/providers/ai_status_controller.dart';
+import 'package:meetmind_ai/features/meetings/domain/entities/meeting.dart';
 import 'package:meetmind_ai/features/meetings/domain/entities/meeting_summary.dart';
 import 'package:meetmind_ai/features/meetings/presentation/providers/meeting_summary_provider.dart';
 
+import '../../../../../../core/insights/meeting_score.dart';
 import '../../../../../../core/network/api_failure.dart';
 import '../../../../../../core/theme/spacing.dart';
+import '../../../../../../core/widgets/export_share_sheet.dart';
+import '../../../../../../core/widgets/glass_card.dart';
+import '../../../../../../core/widgets/meeting_score_badge.dart';
 import '../../../ai status/presentation/screens/ai_status_states.dart';
 
+/// Phase 12: takes the full [meeting] (not just its id) so the export/
+/// share sheet has the title/date/time it needs without a second fetch —
+/// MeetingDetailsScreen already has the Meeting loaded for every tab.
 class SummaryTab extends ConsumerWidget {
-  const SummaryTab({super.key, required this.meetingId});
+  const SummaryTab({super.key, required this.meeting});
 
-  final String meetingId;
+  final Meeting meeting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final status = ref.watch(aiStatusControllerProvider(meetingId));
+    final status = ref.watch(aiStatusControllerProvider(meeting.id));
 
     return status.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -38,13 +46,13 @@ class SummaryTab extends ConsumerWidget {
           return AiProcessingState(label: aiStatus.label);
         }
 
-        final summary = ref.watch(meetingSummaryProvider(meetingId));
+        final summary = ref.watch(meetingSummaryProvider(meeting.id));
         return summary.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(child: Text(ApiFailure.from(error).message)),
           data: (s) {
             if (s == null) return AiProcessingState(label: aiStatus.label);
-            return _SummaryContent(summary: s);
+            return _SummaryContent(meeting: meeting, summary: s);
           },
         );
       },
@@ -53,8 +61,9 @@ class SummaryTab extends ConsumerWidget {
 }
 
 class _SummaryContent extends StatelessWidget {
-  const _SummaryContent({required this.summary});
+  const _SummaryContent({required this.meeting, required this.summary});
 
+  final Meeting meeting;
   final MeetingSummary summary;
 
   @override
@@ -73,16 +82,24 @@ class _SummaryContent extends StatelessWidget {
               style: TextStyle(color: scheme.tertiary, fontWeight: FontWeight.w600),
             ),
             const Spacer(),
+            IconButton(
+              tooltip: 'Export & share',
+              icon: const Icon(Icons.ios_share, size: 20),
+              onPressed: () => showExportShareSheet(context, meeting: meeting, summary: summary),
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.sm),
+        Row(
+          children: [
+            MeetingScoreBadge(score: MeetingScore.fromSummary(summary)),
+            const Spacer(),
             _MoodBadge(mood: summary.mood),
           ],
         ),
         const SizedBox(height: Spacing.lg),
-        Card(
-          color: scheme.tertiaryContainer,
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.lg),
-            child: Text(summary.executiveSummary),
-          ),
+        GlassCard(
+          child: Text(summary.executiveSummary),
         ),
         const SizedBox(height: Spacing.md),
         _SummarySection(title: 'Key points', icon: Icons.list_alt, items: summary.bulletSummary),
