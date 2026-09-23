@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
+import '../../../../core/network/connectivity_controller.dart';
 import '../../data/datasources/meeting_remote_data_source.dart';
 import '../../data/repositories/meeting_repository_impl.dart';
 import '../../domain/repositories/meeting_repository.dart';
@@ -18,7 +19,14 @@ final meetingRemoteDataSourceProvider = Provider(
 );
 
 final meetingRepositoryProvider = Provider<MeetingRepository>(
-  (ref) => MeetingRepositoryImpl(ref.watch(meetingRemoteDataSourceProvider)),
+  (ref) => MeetingRepositoryImpl(
+    ref.watch(meetingRemoteDataSourceProvider),
+    // Phase 10: lets the repository fall back to the local cache and
+    // outbox-queue writes without watching connectivity itself (a plain
+    // Provider, so it isn't rebuilt on every connectivity flap — it just
+    // reads the current value at call time).
+    isOnline: () => ref.read(isOnlineProvider),
+  ),
 );
 
 final listMeetingsUseCaseProvider = Provider((ref) => ListMeetingsUseCase(ref.watch(meetingRepositoryProvider)));

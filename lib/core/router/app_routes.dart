@@ -38,6 +38,9 @@ class AppRoutes {
   static const settings = '/settings';
   static const admin = '/admin';
 
+  // Phase 10: Offline Support & Sync Hardening.
+  static const syncConflicts = '/sync/conflicts';
+
   static String meetingDetailsPath(String id) => '/meetings/$id';
   static String meetingEditPath(String id) => '/meetings/$id/edit';
   static String recordMeetingPath(String id) => '/meetings/$id/record';

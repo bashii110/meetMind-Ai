@@ -18,9 +18,11 @@ Future<void> firebaseMessagingBackgroundHandler(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  debugPrint(
-    'FCM background message: ${message.messageId}',
-  );
+  if (kDebugMode) {
+    debugPrint(
+      'FCM background message: ${message.messageId}',
+    );
+  }
 }
 
 class FcmService {
@@ -114,9 +116,11 @@ class FcmService {
 
           onNotificationTap?.call(data);
         } catch (e) {
-          debugPrint(
-            'Failed to parse notification payload: $e',
-          );
+          if (kDebugMode) {
+            debugPrint(
+              'Failed to parse notification payload: $e',
+            );
+          }
 
           onNotificationTap?.call({});
         }
@@ -143,25 +147,20 @@ class FcmService {
   Future<void> _showForegroundNotification(
       RemoteMessage message,
       ) async {
-    debugPrint(
-      '🔥 FCM FOREGROUND MESSAGE RECEIVED',
-    );
-
-    debugPrint(
-      'Message ID: ${message.messageId}',
-    );
-
-    debugPrint(
-      'Title: ${message.notification?.title}',
-    );
-
-    debugPrint(
-      'Body: ${message.notification?.body}',
-    );
-
-    debugPrint(
-      'Data: ${message.data}',
-    );
+    // Phase 11 security/privacy hardening: this used to unconditionally
+    // debugPrint the message id, title, body, and full data payload —
+    // `debugPrint` is not stripped from release builds (it's throttled,
+    // not compiled out), so meeting/task titles and other notification
+    // content would have kept landing in the device's system log in
+    // production. Gated behind kDebugMode, matching the convention
+    // main.dart already uses for its own Firebase-init diagnostics.
+    if (kDebugMode) {
+      debugPrint('🔥 FCM FOREGROUND MESSAGE RECEIVED');
+      debugPrint('Message ID: ${message.messageId}');
+      debugPrint('Title: ${message.notification?.title}');
+      debugPrint('Body: ${message.notification?.body}');
+      debugPrint('Data: ${message.data}');
+    }
 
     final notification = message.notification;
 
@@ -201,13 +200,13 @@ class FcmService {
         },
       );
 
-      debugPrint(
-        '✅ FCM token registered successfully',
-      );
+      if (kDebugMode) {
+        debugPrint('✅ FCM token registered successfully');
+      }
     } catch (e) {
-      debugPrint(
-        '❌ FCM token registration failed: $e',
-      );
+      if (kDebugMode) {
+        debugPrint('❌ FCM token registration failed: $e');
+      }
     }
   }
 
@@ -244,13 +243,13 @@ class FcmService {
         },
       );
 
-      debugPrint(
-        '✅ FCM token unregistered successfully',
-      );
+      if (kDebugMode) {
+        debugPrint('✅ FCM token unregistered successfully');
+      }
     } catch (e) {
-      debugPrint(
-        '❌ FCM token unregister failed: $e',
-      );
+      if (kDebugMode) {
+        debugPrint('❌ FCM token unregister failed: $e');
+      }
     }
 
     // Allow FCM to initialize again for the next logged-in user.

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
+import '../../../../core/network/connectivity_controller.dart';
 import '../../data/datasources/task_remote_data_source.dart';
 import '../../data/repositories/task_repository_impl.dart';
 import '../../domain/repositories/task_repository.dart';
@@ -22,7 +23,10 @@ final taskRemoteDataSourceProvider = Provider(
 );
 
 final taskRepositoryProvider = Provider<TaskRepository>(
-  (ref) => TaskRepositoryImpl(ref.watch(taskRemoteDataSourceProvider)),
+  (ref) => TaskRepositoryImpl(
+    ref.watch(taskRemoteDataSourceProvider),
+    isOnline: () => ref.read(isOnlineProvider),
+  ),
 );
 
 final listTasksUseCaseProvider = Provider((ref) => ListTasksUseCase(ref.watch(taskRepositoryProvider)));

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/sync_status_chip.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../meetings/presentation/providers/meetings_list_controller.dart';
 import '../../../meetings/presentation/widgets/meeting_card.dart';
@@ -15,11 +16,11 @@ import '../../../tasks/presentation/providers/task_stats_provider.dart';
 /// Phase 5 added the "Pending Tasks / Completed Tasks" stat row; Phase 6
 /// added a calendar shortcut in the app bar; Phase 7 added a Workspaces
 /// shortcut (SRD FR-10.1); Phase 8 added a global Search shortcut (SRD
-/// FR-12.1). Phase 9 adds an Analytics shortcut for every signed-in user
-/// (SRD FR-13.1/FR-2.5) and an Admin shortcut shown only to
-/// `role == 'system_admin'` accounts (SRD FR-16.x) — regular users never
-/// see the icon, since there's nothing behind it for them; `AdminScreen`
-/// still re-checks the role itself as the real gate.
+/// FR-12.1); Phase 9 added an Analytics shortcut for every signed-in user
+/// (SRD FR-13.1/FR-2.5) and an Admin shortcut gated to `system_admin`.
+/// Phase 10 adds a sync-status chip (pending offline changes / task
+/// conflicts awaiting review) next to Notifications, since it's the same
+/// kind of "needs your attention" signal.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -42,6 +43,10 @@ class DashboardScreen extends ConsumerWidget {
             icon: const Icon(Icons.search),
             onPressed: () => context.push(AppRoutes.search),
           ),
+
+          // Sync status - only renders when there's something to show
+          // (pending offline changes or conflicts awaiting review).
+          const SyncStatusChip(),
 
           // Notifications - keep visible
           IconButton(
@@ -178,7 +183,9 @@ class DashboardScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: Spacing.lg),
                 child: Text(
                   'Could not load meetings.',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                 ),
               ),
               data: (list) {

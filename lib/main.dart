@@ -4,12 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/network/connectivity_controller.dart';
 import 'core/notifications/fcm_providers.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/router/app_router.dart';
 import 'core/router/auth_status.dart';
 import 'core/storage/local_db.dart';
+import 'core/sync/outbox_sync_manager.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/offline_banner.dart';
 import 'features/notifications/presentation/providers/notifications_controller.dart';
 import 'firebase_options.dart';
 
@@ -46,12 +49,26 @@ Future<void> _initializeFirebase() async {
   }
 }
 
+/// Phase 10 (ARCHITECTURE.md 2.3): resolves the real connectivity state
+/// once at startup (ConnectivityController.build() starts optimistic),
+/// then replays anything left in the outbox from a previous offline
+/// session. Watching this once in MeetMindApp.build is enough to run it
+/// exactly once — Riverpod caches the FutureProvider's result for the
+/// rest of the app's lifetime.
+final _startupSyncProvider = FutureProvider<void>((ref) async {
+  await ref.read(connectivityControllerProvider.notifier).refresh();
+  if (ref.read(isOnlineProvider)) {
+    await ref.read(outboxSyncManagerProvider.notifier).syncNow();
+  }
+});
+
 class MeetMindApp extends ConsumerWidget {
   const MeetMindApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    ref.watch(_startupSyncProvider);
 
     // FCM registration needs an authenticated session (POST /device-tokens
     // requires auth:sanctum), so it's triggered off auth state rather than
@@ -70,6 +87,15 @@ class MeetMindApp extends ConsumerWidget {
       }
     });
 
+    // Phase 10: reconnecting kicks off a sync pass automatically, so
+    // queued offline changes don't sit around waiting for the user to
+    // notice the sync chip and tap it themselves.
+    ref.listen(connectivityControllerProvider, (previous, next) {
+      if (previous == ConnectivityStatus.offline && next == ConnectivityStatus.online) {
+        ref.read(outboxSyncManagerProvider.notifier).syncNow();
+      }
+    });
+
     return MaterialApp.router(
       title: 'MeetMind AI',
       debugShowCheckedModeBanner: false,
@@ -77,6 +103,15 @@ class MeetMindApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       routerConfig: router,
+      // Phase 10: a persistent offline banner sits above every screen —
+      // wrapping here, rather than in each Scaffold, means new screens
+      // get it for free.
+      builder: (context, child) => Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: child ?? const SizedBox.shrink()),
+        ],
+      ),
     );
   }
 }

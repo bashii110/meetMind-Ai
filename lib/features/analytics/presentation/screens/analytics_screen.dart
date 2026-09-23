@@ -46,25 +46,48 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           }
 
           _selectedWorkspaceId ??= list.first.id;
-          final selected = list.firstWhere(
-            (w) => w.id == _selectedWorkspaceId,
-            orElse: () => list.first,
+
+          final selectedIndex = list.indexWhere(
+                (w) => w.id == _selectedWorkspaceId,
           );
+
+          final selected = selectedIndex >= 0
+              ? list[selectedIndex]
+              : list.first;
 
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.lg, Spacing.lg, Spacing.sm),
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.lg,
+                  Spacing.lg,
+                  Spacing.lg,
+                  Spacing.sm,
+                ),
                 child: DropdownButtonFormField<String>(
                   initialValue: selected.id,
-                  decoration: const InputDecoration(labelText: 'Workspace'),
+                  decoration: const InputDecoration(
+                    labelText: 'Workspace',
+                  ),
                   items: [
-                    for (final w in list) DropdownMenuItem(value: w.id, child: Text(w.name)),
+                    for (final w in list)
+                      DropdownMenuItem(
+                        value: w.id,
+                        child: Text(w.name),
+                      ),
                   ],
-                  onChanged: (value) => setState(() => _selectedWorkspaceId = value),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedWorkspaceId = value;
+                    });
+                  },
                 ),
               ),
-              Expanded(child: _AnalyticsBody(workspaceId: selected.id)),
+              Expanded(
+                child: _AnalyticsBody(
+                  workspaceId: selected.id,
+                ),
+              ),
             ],
           );
         },
@@ -92,13 +115,14 @@ class _AnalyticsBody extends ConsumerWidget {
           children: [
             Center(child: ProductivityScoreGauge(score: summary.productivityScore)),
             const SizedBox(height: Spacing.lg),
+
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: Spacing.md,
               crossAxisSpacing: Spacing.md,
-              childAspectRatio: 2.4,
+              childAspectRatio: 2.2,
               children: [
                 AnalyticsStatCard(
                   label: 'Avg. duration',
@@ -122,6 +146,8 @@ class _AnalyticsBody extends ConsumerWidget {
                 ),
               ],
             ),
+
+
             const SizedBox(height: Spacing.xl),
             Text('Meetings per month', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: Spacing.md),

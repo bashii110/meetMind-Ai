@@ -19,6 +19,7 @@ import '../../features/notifications/presentation/screens/notification_list_scre
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/recording/presentation/screens/record_meeting_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
+import '../../features/sync/presentation/screens/conflict_resolution_screen.dart';
 import '../../features/tasks/presentation/screens/create_edit_task_screen.dart';
 import '../../features/tasks/presentation/screens/task_details_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_screen.dart';
@@ -187,6 +188,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.admin,
         builder: (context, state) => const AdminScreen(),
+      ),
+      // Phase 10: Offline Support & Sync Hardening — manual merge review
+      // for task edits that diverged from the server while offline.
+      GoRoute(
+        path: AppRoutes.syncConflicts,
+        builder: (context, state) => const ConflictResolutionScreen(),
       ),
     ],
   );
